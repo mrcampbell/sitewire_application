@@ -6,6 +6,7 @@ import {
   percentile,
   summarize,
   timeoutCostCurve,
+  twoProportionZ,
   wilsonInterval,
 } from '../../src/lib/stats.js';
 
@@ -49,6 +50,17 @@ describe('failureCorrelation', () => {
     expect(c.pFailAfterFail).toBeCloseTo(1 / 3);
     expect(c.pFailAfterOk).toBe(0.5);
     expect(c.nAfterFail + c.nAfterOk).toBe(5);
+  });
+});
+
+describe('twoProportionZ', () => {
+  it('does not call 36% vs 22% significant at n=25 vs n=74', () => {
+    // The first real sample run: 9/25 failures after a failure vs 16/74 after a success.
+    expect(twoProportionZ(9, 25, 16, 74)).toBeCloseTo(1.43, 1);
+  });
+
+  it('detects a real difference with enough data', () => {
+    expect(twoProportionZ(150, 300, 75, 300)).toBeGreaterThan(1.96);
   });
 });
 

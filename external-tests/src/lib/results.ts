@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DATASET_FILE, RESULTS_DIR } from '../config.js';
 import type { Dataset } from '../types.js';
-import type { Sample } from './http.js';
+import { isClientStall, type Sample } from './http.js';
 
 /** Result files for a probe, oldest first (run ids are ISO timestamps, so they sort). */
 export function listResultFiles(probe: string): string[] {
@@ -20,9 +20,11 @@ export function loadSamples(file: string): Sample[] {
     .map((line) => JSON.parse(line) as Sample);
 }
 
-export function loadProbeSamples(probe: string): { files: string[]; samples: Sample[] } {
+/** All samples for a probe, with client stalls (see isClientStall) split out rather than mixed in. */
+export function loadProbeSamples(probe: string): { files: string[]; samples: Sample[]; stalled: Sample[] } {
   const files = listResultFiles(probe);
-  return { files, samples: files.flatMap(loadSamples) };
+  const all = files.flatMap(loadSamples);
+  return { files, samples: all.filter((s) => !isClientStall(s)), stalled: all.filter(isClientStall) };
 }
 
 export function loadDataset(): Dataset | undefined {

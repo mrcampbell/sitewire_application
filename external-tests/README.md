@@ -90,6 +90,7 @@ Then start the app with `API_BASE_URL=http://localhost:4000`.
 
 ## Caveats
 
+- **Keep the machine awake during probes.** On macOS, run `caffeinate -i npm run probe:all`. During the first run, the laptop idle-slept in the middle of a request: one sample took 174 s against a 15 s timeout, because a suspended process can't fire timers. Samples that outlive the client's own timeout are now flagged as client stalls and excluded, and the report lists them. The contaminated run is kept in `results/excluded/` for transparency.
 - Latency is measured from the client, so it includes the network round trip to the Vercel region. It describes what the app experiences from this machine, not server time alone.
 - About 100 samples per endpoint gives a failure-rate interval of roughly ±8 percentage points. Add more with `--n`.
 - The failure model assumes each attempt is independent. The clustering check in the report tests that assumption.

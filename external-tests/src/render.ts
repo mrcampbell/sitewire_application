@@ -1,5 +1,5 @@
 import type { ConcurrencyRow, DataQuality, EndpointAnalysis, ScanAnalysis, SuggestedParameters } from './analysis.js';
-import type { Interval, Summary } from './lib/stats.js';
+import { twoProportionZ, type Interval, type Summary } from './lib/stats.js';
 
 export const fmtMs = (v: number) => {
   if (v === Number.POSITIVE_INFINITY) return '∞';
@@ -29,13 +29,19 @@ const summaryRow = (label: string, s: Summary) => [
 ];
 
 function clusteringVerdict(a: EndpointAnalysis): string {
-  const { pFailAfterFail, pFailAfterOk, nAfterFail } = a.correlation;
-  if (nAfterFail < 20) return 'too few consecutive pairs to judge — collect more samples';
-  const diff = pFailAfterFail - pFailAfterOk;
-  if (Math.abs(diff) <= 0.1) return 'consistent with independent failures — an immediate retry is as good as a fresh request';
-  return diff > 0
-    ? 'failures cluster — back off before retrying'
-    : 'a failure makes the next request *less* likely to fail (unusual; worth a closer look)';
+  const { pFailAfterFail, pFailAfterOk, nAfterFail, nAfterOk } = a.correlation;
+  if (nAfterFail < 10) return 'too few consecutive pairs to judge: collect more samples';
+  const z = twoProportionZ(
+    Math.round(pFailAfterFail * nAfterFail),
+    nAfterFail,
+    Math.round(pFailAfterOk * nAfterOk),
+    nAfterOk,
+  );
+  const zText = `z = ${z.toFixed(2)}`;
+  if (Math.abs(z) < 1.96) return `no significant clustering (${zText}): consistent with independent failures`;
+  return z > 0
+    ? `failures cluster (${zText}): back off before retrying`
+    : `a failure makes the next request *less* likely to fail (${zText}; unusual, worth a closer look)`;
 }
 
 export function renderEndpoint(title: string, a: EndpointAnalysis): string {

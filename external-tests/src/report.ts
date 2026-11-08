@@ -8,7 +8,7 @@ import { basename } from 'node:path';
 import { analyzeConcurrency, analyzeDataset, analyzeEndpoint, analyzeScan, deriveParameters } from './analysis.js';
 import { BASE_URL, REPORT_FILE, USER_ID_MAX } from './config.js';
 import { listResultFiles, loadDataset, loadProbeSamples, loadSamples } from './lib/results.js';
-import { renderConcurrency, renderDataQuality, renderEndpoint, renderParameters, renderScan } from './render.js';
+import { fmtMs, renderConcurrency, renderDataQuality, renderEndpoint, renderParameters, renderScan } from './render.js';
 
 const notRun = (script: string) => `_Not run yet: \`npm run ${script}\`._`;
 
@@ -25,6 +25,15 @@ const concurrencyRows = analyzeConcurrency(concurrency.samples);
 const scan = analyzeScan(scanSamples);
 const userCount = dataset?.users.length ?? USER_ID_MAX;
 
+const stalled = [...sample.stalled, ...concurrency.stalled];
+const stallNote = stalled.length
+  ? [
+      `> **Excluded ${stalled.length} sample(s)** that outlived the client's own timeout, meaning the client process was suspended (e.g. laptop sleep), not the API being slow:`,
+      ...stalled.map((s) => `> \`${s.probe}\` ${s.startedAt} ${s.path}: ${fmtMs(s.totalMs)}`),
+      '',
+    ]
+  : [];
+
 const sources = [...sample.files, ...concurrency.files, ...(latestScanFile ? [latestScanFile] : [])].map(
   (f) => `\`${basename(f)}\``,
 );
@@ -38,6 +47,7 @@ const report = [
   '> Latencies are measured from this client, so they include network round-trip time to the Vercel region.',
   '> They describe what *this* app will experience from here, not pure server time.',
   '',
+  ...stallNote,
   '## 1. Baseline: sequential, no retries',
   '',
   usersSamples.length ? renderEndpoint('GET /users', analyzeEndpoint(usersSamples)) : notRun('probe:sample'),

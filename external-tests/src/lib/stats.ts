@@ -104,6 +104,17 @@ export function failureCorrelation(failed: readonly boolean[]): Correlation {
 }
 
 /**
+ * Pooled two-proportion z statistic for k1/n1 vs k2/n2. |z| > 1.96 ≈ significant at 5%.
+ * Used to keep the clustering verdict honest at small sample sizes.
+ */
+export function twoProportionZ(k1: number, n1: number, k2: number, n2: number): number {
+  if (n1 === 0 || n2 === 0) return Number.NaN;
+  const pooled = (k1 + k2) / (n1 + n2);
+  const se = Math.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2));
+  return se === 0 ? 0 : (k1 / n1 - k2 / n2) / se;
+}
+
+/**
  * Smallest attempt budget k such that, with independent failures at rate pFail,
  * the expected number of still-failing items across `population` is <= target.
  */

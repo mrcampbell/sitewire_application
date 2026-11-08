@@ -35,6 +35,14 @@ export interface TimedResponse {
   body: unknown;
 }
 
+/**
+ * A request can't legitimately outlive the client's own timeout by much. If it did,
+ * the client process was suspended (e.g. the laptop idle-slept mid-request) and the
+ * sample says nothing about the API. Such samples are excluded from analysis.
+ */
+const STALL_SLACK_MS = 5_000;
+export const isClientStall = (s: Sample) => s.totalMs > REQUEST_TIMEOUT_MS + STALL_SLACK_MS;
+
 export const usersPath = () => '/users';
 export const loginsPath = (id: number | string) => `/users/${id}/relationships/logins`;
 
