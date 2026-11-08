@@ -1,0 +1,27 @@
+{
+  "name": "sitewire-external-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Black-box measurement, contract tests and a calibrated simulator for the Fake Users API",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "probe:sample": "tsx src/probes/sample.ts",
+    "probe:concurrency": "tsx src/probes/concurrency.ts",
+    "probe:scan": "tsx src/probes/scan.ts",
+    "probe:all": "npm run probe:sample && npm run probe:concurrency && npm run probe:scan && npm run report",
+    "report": "tsx src/report.ts",
+    "sim": "tsx sim/main.ts",
+    "test": "vitest run tests/unit",
+    "test:live": "vitest run tests/live",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

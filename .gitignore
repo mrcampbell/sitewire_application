@@ -1,0 +1,6 @@
+node_modules/
+.DS_Store
+*.log
+
+# Personal Claude Code permissions, not part of the submission
+.claude/settings.local.json
