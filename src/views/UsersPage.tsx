@@ -2,8 +2,7 @@ import type { Child } from 'hono/jsx';
 import type { Counts, Row } from '../loader.js';
 import type { User } from '../types.js';
 import { ErrorIcon } from './icons.js';
-import { LoadStatus } from './LoadStatus.js';
-import { StatsBar } from './StatsBar.js';
+import { LoadSummary } from './LoadSummary.js';
 import { UsersTable } from './UsersTable.js';
 
 const PageHeader = () => (
@@ -28,9 +27,9 @@ type UsersPageProps = {
 
 export const UsersPage = ({ users, rows, counts }: UsersPageProps) => (
   <Page>
-    <StatsBar counts={counts} />
-    <LoadStatus counts={counts} />
+    <LoadSummary counts={counts} />
     <UsersTable users={users} rows={rows} />
+    <script src="/users.js" type="module"></script>
   </Page>
 );
 

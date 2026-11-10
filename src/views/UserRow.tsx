@@ -37,7 +37,7 @@ const LoginCells = ({ user, row }: UserRowProps) => {
           <span class="tooltip" data-tip={row.error}>
             <span class="badge badge-soft badge-error badge-sm">Couldn't load logins</span>
           </span>
-          <form method="post" action={`/users/${user.id}/retry`}>
+          <form method="post" action={`/users/${user.id}/retry`} data-retry>
             <button type="submit" class="btn btn-ghost btn-xs">
               Retry
             </button>

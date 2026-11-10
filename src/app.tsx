@@ -1,8 +1,14 @@
+import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
+import type { Child } from 'hono/jsx';
 import { logger } from 'hono/logger';
+import { streamSSE } from 'hono/streaming';
 import { messageOf } from './api.js';
-import { currentLoad } from './loader.js';
+import { currentLoad, type Row } from './loader.js';
+import type { User } from './types.js';
+import { LoadSummary } from './views/LoadSummary.js';
 import { renderer } from './views/renderer.js';
+import { UserRow } from './views/UserRow.js';
 import { UsersPage, UsersUnavailable } from './views/UsersPage.js';
 
 export const app = new Hono();
@@ -36,8 +42,40 @@ app.get('/', async (c) => {
   }
 });
 
+app.get('/events', (c) =>
+  streamSSE(c, async (stream) => {
+    const load = currentLoad({ allowStale: true });
+    const users = await load.users.catch(() => []);
+
+    let outbox = Promise.resolve();
+    const send = (event: string, html: Child) => {
+      outbox = outbox.then(async () => {
+        await stream.writeSSE({ event, data: String(await html) });
+      });
+    };
+    const sendRow = (user: User, row: Row) => send('row', <UserRow user={user} row={row} />);
+    const sendSummary = () => send('status', <LoadSummary counts={load.counts()} />);
+
+    const unsubscribe = load.subscribe((user, row) => {
+      sendRow(user, row);
+      sendSummary();
+    });
+
+    for (const user of users) {
+      const row = load.rows.get(user.id);
+      if (row && row.status !== 'pending') {
+        sendRow(user, row);
+      }
+    }
+    sendSummary();
+
+    await new Promise<void>((resolve) => stream.onAbort(resolve));
+    unsubscribe();
+  }),
+);
+
 app.post('/users/:id/retry', async (c) => {
-  const load = currentLoad();
+  const load = currentLoad({ allowStale: true });
   const users = await load.users.catch(() => []);
   const user = users.find((u) => u.id === Number(c.req.param('id')));
 
@@ -48,4 +86,5 @@ app.post('/users/:id/retry', async (c) => {
   return c.redirect('/');
 });
 
+app.get('/users.js', serveStatic({ path: './public/users.js' }));
 app.get('/health', (c) => c.json({ ok: true }));

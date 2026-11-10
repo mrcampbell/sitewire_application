@@ -75,6 +75,7 @@ describe('currentLoad', () => {
     expect(currentLoad()).toBe(fresh);
 
     vi.setSystemTime(Date.now() + config.loader.maxAgeMs + 1);
+    expect(currentLoad({ allowStale: true })).toBe(fresh);
     expect(currentLoad()).not.toBe(fresh);
   });
 });

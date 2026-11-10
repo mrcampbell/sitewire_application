@@ -7,8 +7,7 @@ export const LoadStatus = ({ counts }: { counts: Counts }) => {
   if (counts.pending > 0) {
     return (
       <div id="load-status" class="space-y-1.5">
-        <div class="flex items-center gap-2 text-sm text-base-content/70">
-          <span class="loading loading-spinner loading-xs"></span>
+        <div class="text-sm text-base-content/70">
           Loading login history: {settled.toLocaleString('en-US')} of {counts.total.toLocaleString('en-US')}
         </div>
         <progress class="progress w-full" value={settled} max={counts.total}></progress>

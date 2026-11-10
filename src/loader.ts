@@ -97,8 +97,8 @@ export class Load {
 
 let current: Load | undefined;
 
-export function currentLoad(): Load {
-  if (!current || current.failed || current.isStale) {
+export function currentLoad({ allowStale = false } = {}): Load {
+  if (!current || current.failed || (current.isStale && !allowStale)) {
     current = new Load();
   }
 
