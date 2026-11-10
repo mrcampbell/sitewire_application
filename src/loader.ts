@@ -7,6 +7,8 @@ export type Row =
   | { status: 'loaded'; login: Login | null }
   | { status: 'failed'; error: string };
 
+export type Counts = ReturnType<Load['counts']>;
+
 type Listener = (user: User, row: Row) => void;
 
 export class Load {
@@ -28,6 +30,16 @@ export class Load {
 
   get isStale() {
     return this.finishedAt !== undefined && Date.now() - this.finishedAt > config.loader.maxAgeMs;
+  }
+
+  counts() {
+    const counts = { total: this.rows.size, pending: 0, loaded: 0, failed: 0 };
+
+    for (const row of this.rows.values()) {
+      counts[row.status]++;
+    }
+
+    return counts;
   }
 
   subscribe(listener: Listener) {

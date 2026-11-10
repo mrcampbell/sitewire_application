@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
-import { HomePage } from './views/HomePage.js';
+import { messageOf } from './api.js';
+import { currentLoad } from './loader.js';
 import { renderer } from './views/renderer.js';
+import { UsersPage, UsersUnavailable } from './views/UsersPage.js';
 
 export const app = new Hono();
 
@@ -22,5 +24,28 @@ app.use(renderer);
   grouped by path, and at times subject matter. I apply them with `app`
   as the only parameter. Again, overkill, so just adding inline. 
 */
-app.get('/', (c) => c.render(<HomePage />));
+app.get('/', async (c) => {
+  const load = currentLoad();
+
+  try {
+    const users = await load.users;
+    return c.render(<UsersPage users={users} rows={load.rows} counts={load.counts()} />);
+  } catch (err) {
+    c.status(502);
+    return c.render(<UsersUnavailable message={messageOf(err)} />);
+  }
+});
+
+app.post('/users/:id/retry', async (c) => {
+  const load = currentLoad();
+  const users = await load.users.catch(() => []);
+  const user = users.find((u) => u.id === Number(c.req.param('id')));
+
+  if (user) {
+    await load.retry(user);
+  }
+
+  return c.redirect('/');
+});
+
 app.get('/health', (c) => c.json({ ok: true }));
